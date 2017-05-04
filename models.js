@@ -46,9 +46,9 @@ userSchema.methods.apiRepr = function() {
   };
 };
 
-userSchema.methods.validatePassword = (password) => {
-  return bcrypt.compare(password, this.password)
-  .then(isValid => isValid);
+userSchema.methods.validatePassword = function(password)  {
+  return bcrypt.compare(password, this.password);
+  // .then(isValid => isValid);
 };
 
 userSchema.statics.hashPassword = (password) => {
@@ -56,4 +56,5 @@ userSchema.statics.hashPassword = (password) => {
 };
 
 const User = mongoose.model('User', userSchema);
+
 module.exports = {BlogPost, User};

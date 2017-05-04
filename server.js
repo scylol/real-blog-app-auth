@@ -16,8 +16,31 @@ app.use(bodyParser.json());
 
 mongoose.Promise = global.Promise;
 
+const basicStrategy = new BasicStrategy((username, password, callback) => {
+  let user;
+  User
+    .findOne({username:username})
+    .then(result => {
+      user = result;
+      if(!user) {
+        return callback(null, false, {messsage: 'Incorrect username!'});
+      }
+      return user.validatePassword(password);
+    })
+    .then(isValid => {
+      if(!isValid) {
+        return callback(null, false, {message: 'Incorrect password!'});
+      }
+      else {
+        return(callback(null, user));
+      }
+    });
+});
+
+passport.use(basicStrategy);
+
 app.post('/users', (req, res) =>{
-    const requiredFields = ['username', 'password'];
+  const requiredFields = ['username', 'password'];
   for (let i=0; i<requiredFields.length; i++) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -43,14 +66,14 @@ app.post('/users', (req, res) =>{
       password: hash,
       firstName: firstName,
       lastName: lastName
-    })
+    });
   })
   .then(result =>{
     return res.status(201).json(result.apiRepr());
   })
   .catch(err =>{
     console.error(err);
-  })
+  });
 
 });
 
@@ -79,8 +102,8 @@ app.get('/posts/:id', (req, res) => {
     });
 });
 
-app.post('/posts', (req, res) => {
-  const requiredFields = ['title', 'content', 'author'];
+app.post('/posts', passport.authenticate('basic', {session:false}), (req, res) => {
+  const requiredFields = ['title', 'content'];
   for (let i=0; i<requiredFields.length; i++) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -94,7 +117,10 @@ app.post('/posts', (req, res) => {
     .create({
       title: req.body.title,
       content: req.body.content,
-      author: req.body.author
+      author: {
+        firstName: req.user.firstName,
+        lastName: req.user.lastName
+      }
     })
     .then(blogPost => res.status(201).json(blogPost.apiRepr()))
     .catch(err => {
@@ -105,7 +131,7 @@ app.post('/posts', (req, res) => {
 });
 
 
-app.delete('/posts/:id', (req, res) => {
+app.delete('/posts/:id', passport.authenticate('basic', {session:false}), (req, res) => {
   BlogPost
     .findByIdAndRemove(req.params.id)
     .exec()
@@ -119,7 +145,7 @@ app.delete('/posts/:id', (req, res) => {
 });
 
 
-app.put('/posts/:id', (req, res) => {
+app.put('/posts/:id', passport.authenticate('basic', {session:false}), (req, res) => {
   if (!(req.params.id && req.body.id && req.params.id === req.body.id)) {
     res.status(400).json({
       error: 'Request path id and request body id values must match'
@@ -142,8 +168,8 @@ app.put('/posts/:id', (req, res) => {
 });
 
 
-app.delete('/:id', (req, res) => {
-  BlogPosts
+app.delete('/:id', passport.authenticate('basic', {session:false}), (req, res) => {
+  BlogPost
     .findByIdAndRemove(req.params.id)
     .exec()
     .then(() => {
@@ -189,8 +215,8 @@ function closeServer() {
       console.log('Closing server');
       server.close(err => {
         if (err) {
-           return reject(err);
-         }
+          return reject(err);
+        }
         resolve();
       });
     });
