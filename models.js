@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const blogPostSchema = mongoose.Schema({
   author: {
@@ -23,8 +24,35 @@ blogPostSchema.methods.apiRepr = function() {
     title: this.title,
     created: this.created
   };
-}
+};
 
 const BlogPost = mongoose.model('BlogPost', blogPostSchema);
 
-module.exports = {BlogPost};
+//----------------------------------------------------------
+
+const userSchema = mongoose.Scehema({
+  username: {type:String, required: true, unique:true},
+  password: {type: String, required: true},
+  firstName: String,
+  lastName: String
+});
+
+userSchema.methods.apiRepr = () => {
+  return {
+    username: this.username,
+    firstName: this.firstName,
+    lastName: this.lastName
+  };
+};
+
+userSchema.methods.validatePassword = (password) => {
+  return bcrypt.compare(password, this.password)
+  .then(isValid => isValid);
+};
+
+userSchema.statics.hashPassword = (password) => {
+  return bcrypt.hash(password, 10);
+};
+
+const User = mongoose.model('User', userSchema);
+module.exports = {BlogPost, User};
