@@ -23,7 +23,7 @@ function tearDownDb() {
     console.warn('Deleting database');
     mongoose.connection.dropDatabase()
       .then(result => resolve(result))
-      .catch(err => reject(err))
+      .catch(err => reject(err));
   });
 }
 

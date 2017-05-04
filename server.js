@@ -16,9 +16,43 @@ app.use(bodyParser.json());
 
 mongoose.Promise = global.Promise;
 
+app.post('/users', (req, res) =>{
+    const requiredFields = ['username', 'password'];
+  for (let i=0; i<requiredFields.length; i++) {
+    const field = requiredFields[i];
+    if (!(field in req.body)) {
+      const message = `Missing \`${field}\` in request body`;
+      console.error(message);
+      return res.status(400).send(message);
+    }
+  }
+  let {username, password, firstName, lastName} = req.body;
+  return User
+  .find({username: username})
+  .count()
+  .then(count => {
+    if (count > 0){
+      return res.status(400).send('Username already taken!');
+    }
+    return User.hashPassword(password);
+  })
+  .then(hash =>{
+    return User
+    .create({
+      username: username,
+      password: hash,
+      firstName: firstName,
+      lastName: lastName
+    })
+  })
+  .then(result =>{
+    return res.status(201).json(result.apiRepr());
+  })
+  .catch(err =>{
+    console.error(err);
+  })
 
-
-
+});
 
 //-------------------------------------------
 app.get('/posts', (req, res) => {

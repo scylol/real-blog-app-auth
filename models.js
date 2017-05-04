@@ -30,14 +30,15 @@ const BlogPost = mongoose.model('BlogPost', blogPostSchema);
 
 //----------------------------------------------------------
 
-const userSchema = mongoose.Scehema({
+const userSchema = mongoose.Schema({
   username: {type:String, required: true, unique:true},
   password: {type: String, required: true},
   firstName: String,
   lastName: String
 });
 
-userSchema.methods.apiRepr = () => {
+userSchema.methods.apiRepr = function() {
+  console.log(this);
   return {
     username: this.username,
     firstName: this.firstName,
